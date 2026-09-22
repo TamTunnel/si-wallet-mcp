@@ -1,0 +1,25 @@
+{
+  "name": "@tamtunnel/si-wallet-mcp",
+  "version": "0.1.0",
+  "description": "Sovereign-identity wallet as an MCP server: DIDs, agency grants, task mandates",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:smoke-ci": "SI_WALLET_DIR=$(mktemp -d) SI_WALLET_PASSPHRASE=ci-test-pw node test/smoke.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "si-wallet-mcp": "./server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.6.5"
+  }
+}
