@@ -1,0 +1,37 @@
+name: publish-mcp-registry
+
+# Publishes server.json to the official MCP registry after the npm release
+# succeeds. Authenticates via GitHub OIDC — no stored tokens.
+on:
+  workflow_run:
+    workflows: ["publish"]
+    types: [completed]
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Install mcp-publisher
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz --no-same-owner mcp-publisher
+          sudo mv mcp-publisher /usr/local/bin/
+          mcp-publisher --version
+      - name: Wait for the npm release to be visible
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          for i in $(seq 1 30); do
+            if npm view "@tamtunnel/si-wallet-mcp@${VER}" version 2>/dev/null | grep -q "${VER}"; then
+              echo "npm has ${VER}"; exit 0
+            fi
+            echo "waiting for npm… ($i)"; sleep 10
+          done
+          echo "npm did not show ${VER} in time"; exit 1
+      - name: Publish to MCP Registry
+        run: mcp-publisher publish
