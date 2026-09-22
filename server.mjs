@@ -27,6 +27,7 @@ import {
   issueGrant,
   mintMandate,
   verifyMandate,
+  verifyChain,
   pairwiseDid,
 } from "./lib/wallet.mjs";
 
@@ -82,15 +83,16 @@ function makeServer() {
 
   server.tool(
     "mint_mandate",
-    "Agent mints a task mandate for a website audience, bound to an agency grant. Returns the mandate JWS and the Authorization header value. Amounts over $100 need confirmOverLimit=true (only after the owner explicitly approved).",
+    "Agent mints a task mandate for a website audience, bound to an agency grant. Returns the mandate JWS and the Authorization header value. Amounts over $100 need confirmOverLimit=true (only after the owner explicitly approved). Pass subjectDid to delegate to a downstream agent (e.g. Muse delegating to Hermes) with narrowed scope/amount.",
     {
       audience: z.string().describe("Website audience, e.g. 'example.com'"),
       scope: z.array(z.string()).describe("Task scopes (must be a subset of the grant)"),
       amount: z.number().default(0).describe("USD amount for this task"),
       ttlSec: z.number().default(3600).describe("Mandate lifetime in seconds"),
       task: z.string().default("").describe("Human-readable task description"),
-      grantJws: z.string().describe("Agency-grant JWS from issue_grant"),
+      grantJws: z.string().describe("Agency-grant JWS from issue_grant (or a parent mandate JWS when delegating)"),
       confirmOverLimit: z.boolean().default(false).describe("Owner confirmed amounts over $100"),
+      subjectDid: z.string().optional().describe("Downstream agent DID for delegation; defaults to this wallet's agent DID"),
     },
     wrap(async (a) => mintMandate(a))
   );
@@ -103,6 +105,16 @@ function makeServer() {
       expectedAudience: z.string().optional().describe("Audience this verifier expects"),
     },
     wrap(async (a) => verifyMandate(a))
+  );
+
+  server.tool(
+    "verify_chain",
+    "Website-side verification of a multi-hop delegation chain (Owner → … → leaf agent): walks every link, enforcing parent signatures, parent-issued-to-signer binding, scope subset and amount confinement at each hop, expiry, leaf audience, and replay protection. Returns the full attenuated chain.",
+    {
+      mandateJws: z.string().describe("Leaf task mandate JWS"),
+      expectedAudience: z.string().optional().describe("Audience this verifier expects"),
+    },
+    wrap(async (a) => verifyChain(a))
   );
 
   server.tool(

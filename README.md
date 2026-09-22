@@ -16,8 +16,9 @@ DIDs, agency grants, task mandates, and the AWAS website binding this wallet imp
 | `wallet_onboard` | Create the owner/agent identity (returns existing if present) |
 | `wallet_did` | Get the DID for a role |
 | `issue_grant` | Owner delegates scopes + USD limit to an agent DID |
-| `mint_mandate` | Agent mints a task mandate for a website audience (returns `Authorization: Mandate …` value) |
-| `verify_mandate` | Website-side chain verification: signatures, expiry, audience, replay, grant binding, scope/amount confinement |
+| `mint_mandate` | Agent mints a task mandate for a website audience (returns `Authorization: Mandate …` value). Pass `subjectDid` to delegate to a downstream agent with narrowed scope/amount |
+| `verify_mandate` | Website-side verification: signatures, expiry, audience, replay, grant binding, scope/amount confinement |
+| `verify_chain` | Website-side verification of a multi-hop delegation chain (Owner → … → agent): per-hop signatures, binding, attenuation, replay |
 | `pairwise_did` | Fresh pairwise DID per audience (no cross-site correlation) |
 
 Guardrails are enforced server-side: mandates over **$100** need
@@ -65,7 +66,35 @@ si-wallet-mcp --http --port 8787
 Expose it on a public HTTPS URL (your VPS, fly.io, Tailscale, …), then add
 that URL as a custom connector in Muse with `Authorization: Bearer <token>`.
 The server binds `127.0.0.1` by default; only set `SI_MCP_HOST=0.0.0.0`
-behind TLS.
+behind TLS. Full walkthrough: [DEPLOY.md](DEPLOY.md).
+
+### Docker
+
+```bash
+docker build -t si-wallet-mcp .
+docker run -d --name si-wallet \
+  -e SI_MCP_TOKEN="$(openssl rand -hex 32)" \
+  -e SI_WALLET_PASSPHRASE="your passphrase" \
+  -v si-wallet-data:/data \
+  -p 127.0.0.1:8787:8787 \
+  si-wallet-mcp
+```
+
+See [DEPLOY.md](DEPLOY.md) for fly.io, Tailscale, TLS, onboarding, backups,
+and connecting Meta Muse.
+
+## Delegation demo: Owner → Muse → Hermes
+
+`examples/delegation-chain/` is a runnable proof that mandates compose
+across agents and frameworks with no pair-specific connectors: the owner
+grants Muse broad authority, Muse delegates a narrowed envelope to Hermes,
+Hermes presents the leaf mandate to a website, and the website verifies the
+whole attenuated chain. Four attacks (scope escalation, amount escalation,
+tampering, replay) are attempted and refused.
+
+```bash
+node examples/delegation-chain/run.mjs
+```
 
 ## Who hosts this?
 
