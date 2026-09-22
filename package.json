@@ -1,7 +1,7 @@
 {
   "name": "@tamtunnel/si-wallet-mcp",
-  "version": "0.1.2",
-  "mcpName": "io.github.tamtunnel/si-wallet-mcp",
+  "version": "0.1.3",
+  "mcpName": "io.github.TamTunnel/si-wallet-mcp",
   "description": "Sovereign-identity wallet as an MCP server: DIDs, agency grants, task mandates",
   "main": "index.js",
   "files": [
