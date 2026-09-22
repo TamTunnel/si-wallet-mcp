@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "description": "Sovereign-identity wallet as an MCP server: DIDs, agency grants, task mandates",
   "main": "index.js",
+  "files": [
+    "server.mjs",
+    "lib/",
+    "examples/",
+    "README.md",
+    "DEPLOY.md"
+  ],
   "directories": {
     "lib": "lib",
     "test": "test"
